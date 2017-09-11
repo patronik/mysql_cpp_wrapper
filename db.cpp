@@ -6,6 +6,19 @@ DB::DB (const char * host, const char * user, const char * pass)
 	con.reset(driver->connect("tcp://" + string(host), user, pass));
 };
 
+/**
+*
+*Where syntax:
+*
+* if where condition has 1 part - this is joiner between conditions
+*
+* if where condition has 2 parts - first part is left side of expression,
+*    second part is an operator and final value without placeholders
+*
+* if where condition has 3 or more parts - first part is left side of expression,
+* second part is an operator with placeholders, third and rest are values for placeholders
+*
+**/
 bool DB::update(string table, db_row row, db_where where)
 {
 	column_data * columns = getInfo(table);
@@ -21,7 +34,7 @@ bool DB::update(string table, db_row row, db_where where)
 
 	string sql("UPDATE `" + table + "` SET ");
 
-	int i = 0;
+	auto i = 0;
 	for (auto const & item : row) {
 		sql += "`" + item.first + "` = ?";
 		if (i < (row.size() - 1)) { sql += ", "; }
@@ -31,12 +44,40 @@ bool DB::update(string table, db_row row, db_where where)
 	string filter;
 	if (where.size() > 0) {
 		filter = " WHERE ";
- 		for (int i = 0; i < where.size(); i++) {
+ 		for (auto i = 0; i < where.size(); i++) {
 
-			if (where[i].size() < 2) {
-				cout << "condition must have at least 2 parts" << endl;
+			if (where[i].empty()) {
+				cout << "condition cannot be empty" << endl;
 				filter = "";
 				break;
+			}
+
+			if (where[i].size() == 2 && where[i][1].find("?") != string::npos) {
+				cout << "this condition should not contain placeholders" << endl;
+				filter = "";
+				break;
+			}
+
+			if (i > 0) {
+                // join conditions
+                if (where[i].size() == 1) {
+                    transform(where[i][0].begin(), where[i][0].end(),
+                              where[i][0].begin(), ::toupper);
+                   if (where[i][0] != "OR" && where[i][0] != "AND") {
+                        cout << "cannot join conditions with '"
+                        << where[i][0] << "'" << endl;
+                        filter = "";
+                        break;
+                   }
+                   // condition is a joiner
+                   filter += " " + where[i][0] + " ";
+                   continue;
+                } else {
+                    if (where[i-1].size() != 1) {
+                        // default joiner
+                        filter += " AND ";
+                    }
+                }
 			}
 
 			// left side of expr
@@ -46,16 +87,9 @@ bool DB::update(string table, db_row row, db_where where)
 				filter += where[i][0];
 			}
 
-			if (where[i].size() == 2 && where[i][1].find("?") != string::npos) {
-				cout << "condition with 2 parts cannot contain placeholders" << endl;
-				filter = "";
-				break;
-			}
-
 			// operator with placeholder(s) or final value
 			filter += " " + where[i][1] + " ";
 
-			if (i < (where.size() - 1)) { filter += " AND "; }
 		}
 		sql += filter;
 	}
@@ -76,11 +110,11 @@ bool DB::update(string table, db_row row, db_where where)
 	}
 
 	if (where.size() > 0 && !filter.empty()) {
-		for (int i = 0; i < where.size(); i++) {
-			if (columns->find(where[i][0]) != columns->end()) {
+		for (auto i = 0; i < where.size(); i++) {
+            // skip conditions without values for placeholders
+            if (where[i].size() < 3) { continue; }
 
-				// skip conditions without values for placeholders
-				if (where[i].size() < 3) { continue; }
+			if (columns->find(where[i][0]) != columns->end()) {
 
 				int wtype = stoi((*columns)[where[i][0]]["type"]);
 				if (wtype >= sql::DataType::CHAR && wtype <= sql::DataType::LONGVARBINARY) {
@@ -88,7 +122,7 @@ bool DB::update(string table, db_row row, db_where where)
 
 					// if this condition has more that 1 placeholders
 					if (where[i].size() > 3) {
-						for (int n = 3; n < where[i].size(); n++) {
+						for (auto n = 3; n < where[i].size(); n++) {
 							pstmt->setString(pos++, where[i][n]);
 						}
 					}
@@ -98,7 +132,7 @@ bool DB::update(string table, db_row row, db_where where)
 
 					// if this condition has more that 1 placeholders
 					if (where[i].size() > 3) {
-						for (int n = 3; n < where[i].size(); n++) {
+						for (auto n = 3; n < where[i].size(); n++) {
 							pstmt->setInt(pos++, stoi(where[i][n]));
 						}
 					}
@@ -108,7 +142,7 @@ bool DB::update(string table, db_row row, db_where where)
 
 					// if this condition has more that 1 placeholders
 					if (where[i].size() > 3) {
-						for (int n = 3; n < where[i].size(); n++) {
+						for (auto n = 3; n < where[i].size(); n++) {
 							pstmt->setDouble(pos++, stod(where[i][n]));
 						}
 					}
@@ -118,7 +152,7 @@ bool DB::update(string table, db_row row, db_where where)
 
 					// if this condition has more that 1 placeholders
 					if (where[i].size() > 3) {
-						for (int n = 3; n < where[i].size(); n++) {
+						for (auto n = 3; n < where[i].size(); n++) {
 							pstmt->setString(pos++, where[i][n]);
 						}
 					}
@@ -129,7 +163,7 @@ bool DB::update(string table, db_row row, db_where where)
 
 				// if this condition has more that 1 placeholders
 				if (where[i].size() > 3) {
-					for (int n = 3; n < where[i].size(); n++) {
+					for (auto n = 3; n < where[i].size(); n++) {
 						pstmt->setString(pos++, where[i][n]);
 					}
 				}

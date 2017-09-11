@@ -19,11 +19,27 @@ int main(int argc, char * argv[]) {
 		}
 		*/
 
-		//db.setDatabase("southco");
+		db.query("SET global general_log = 1");
+		db.query("SET global log_output = 'table'");
+		db.setDatabase("mysql");
+		db.query("TRUNCATE TABLE `general_log`");
 
-		//db_row row = { { "topic_id", "500" }};
-		//db_where where = { { "topic_id", "= ?", "17" }, { "user_id", "IN(?, ?)", "59", "58"} };
-		//bool res = db.update("forum_thanks", row, where);
+		db.setDatabase("sandbox");
+
+		db.query("TRUNCATE TABLE `test`");
+		db.query("INSERT INTO `test` (id) VALUES (15)");
+		db.query("INSERT INTO `test` (id) VALUES (25)");
+		db.query("INSERT INTO `test` (id) VALUES (35)");
+
+        db.update("test", {{ "id", "125" }}, {{ "id", "= ?", "15" }});
+		db.update("test", {{ "id", "225" }}, {{ "id", "IN(25)"}});
+		db.update("test", {{ "id", "325" }}, {{ "id", "IN(?, ?, ?)", "15", "65", "75"}});
+
+		db.update("test", {{ "id", "125" }}, {{ "id", "= ?", "15" }, {"OR"}, { "id", "= ?", "16"}});
+		db.update("test", {{ "id", "125" }}, {{ "id", " > 156"}, {"AND"}, { "id", "= ?", "16"}});
+		db.update("test", {{ "id", "325" }}, {{ "id", "IN(?, ?, ?)", "15", "65", "75"}, {"OR"}, {"id", " > 156"}, {"OR"}, {"id", "= ?", "66"}, {"id", "= ?", "166"}, {"id", "= ?", "66"}, {"id", "= ?", "66"}, {"id", "= ?", "66"}});
+
+		db.query("SET global general_log = 0");
 
 	}
 	catch (sql::SQLException &e) {
