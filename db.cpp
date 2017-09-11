@@ -6,30 +6,9 @@ DB::DB (const char * host, const char * user, const char * pass)
 	con.reset(driver->connect("tcp://" + string(host), user, pass));
 };
 
-column_data * DB::getTableInfo(string table)
-{
-	if (tableData.find(table) == tableData.end()) {
-		string val = fetchOne("SHOW TABLES LIKE '" + table + "'");
-		if (val.empty()) {
-			return nullptr;
-		}
-		unique_ptr<sql::Statement> stmt(con->createStatement());
-		unique_ptr<sql::ResultSet> res(
-			stmt->executeQuery("SELECT * FROM `" + table + "` LIMIT 1")
-			);
-		sql::ResultSetMetaData * info = res->getMetaData();
-		int numcols = info->getColumnCount();
-		for (int i = 1; i <= numcols; i++) {
-			tableData[table][info->getColumnName(i)]["type"]
-				= to_string(info->getColumnType(i));
-		}
-	}
-	return &tableData[table];
-};
-
 bool DB::update(string table, db_row row, db_where where)
 {
-	column_data * columns = getTableInfo(table);
+	column_data * columns = getInfo(table);
 	if (columns == nullptr) {
 		cout << "table '" << table << "' does not exist" << endl;
 		return false;
@@ -100,7 +79,7 @@ bool DB::update(string table, db_row row, db_where where)
 		for (int i = 0; i < where.size(); i++) {
 			if (columns->find(where[i][0]) != columns->end()) {
 
-				// skip conditions without values to replace placeholders
+				// skip conditions without values for placeholders
 				if (where[i].size() < 3) { continue; }
 
 				int wtype = stoi((*columns)[where[i][0]]["type"]);
@@ -209,4 +188,35 @@ bool DB::query(string sql)
 {
 	unique_ptr<sql::Statement> stmt(con->createStatement());
 	return stmt->execute(sql);
+};
+
+string DB::repeat(string c, int n, string glue)
+{
+    string res;
+    while (n > 0) {
+        res += c;
+        if (n-- > 1) { res += glue; }
+    }
+    return res;
+};
+
+column_data * DB::getInfo(string table)
+{
+	if (tableData.find(table) == tableData.end()) {
+		string val = fetchOne("SHOW TABLES LIKE '" + table + "'");
+		if (val.empty()) {
+			return nullptr;
+		}
+		unique_ptr<sql::Statement> stmt(con->createStatement());
+		unique_ptr<sql::ResultSet> res(
+			stmt->executeQuery("SELECT * FROM `" + table + "` LIMIT 1")
+			);
+		sql::ResultSetMetaData * info = res->getMetaData();
+		int numcols = info->getColumnCount();
+		for (int i = 1; i <= numcols; i++) {
+			tableData[table][info->getColumnName(i)]["type"]
+				= to_string(info->getColumnType(i));
+		}
+	}
+	return &tableData[table];
 };

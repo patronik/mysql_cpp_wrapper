@@ -11,10 +11,10 @@
 #include <memory>
 
 #include "mysql_connection.h"
- 
+
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
-#include <cppconn/resultset.h> 
+#include <cppconn/resultset.h>
 #include <cppconn/resultset_metadata.h>
 #include <cppconn/statement.h>
 #include <cppconn/prepared_statement.h>
@@ -31,15 +31,15 @@ typedef string										   db_val;
 
 
 class DB {
-	
+
 	unique_ptr<sql::Connection> con;
 
 	table_data tableData;
 
-	column_data * getTableInfo(string table);		
+	column_data * getInfo(string table);
 
 public:
-	
+
 	DB(const char *, const char *, const char *);
 
 	void setDatabase(string database) { con->setSchema(database); };
@@ -51,7 +51,7 @@ public:
 	db_val fetchOne(string sql);
 
 	bool query(string sql);
-	
+
 	// update zero or more rows
 	bool update(string table, db_row row, db_where where = db_where());
 
@@ -66,12 +66,16 @@ public:
 
 	// insert single row and update if key exists
 	bool insert(string table, db_row row, db_row update);
-	
+
 	// insert multiple rows
-	bool insert(string table, db_rows rows);		
+	bool insert(string table, db_rows rows);
 
 	// insert multiple rows and update if key exists
 	bool insert(string table, db_rows rows, db_row update);
+
+	// helper methods
+	string repeat(string c, int n, string glue = ",");
+
 };
 
 #endif /* DB_H */
