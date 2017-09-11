@@ -61,17 +61,11 @@ public:
 	// delete zero or more rows
 	bool remove(string table, db_where where);
 
-	// insert single row
-	bool insert(string table, db_row row);
-
 	// insert single row and update if key exists
-	bool insert(string table, db_row row, db_row update);
-
-	// insert multiple rows
-	bool insert(string table, db_rows rows);
+	bool insert(string table, db_row row, db_row update = db_row());
 
 	// insert multiple rows and update if key exists
-	bool insert(string table, db_rows rows, db_row update);
+	bool insert(string table, db_rows rows, db_row update = db_row());
 
 	// helper methods
 	string repeat(string c, int n, string glue = ",");

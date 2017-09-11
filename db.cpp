@@ -155,6 +155,61 @@ bool DB::update(string table, db_row row, db_where where)
 	return true;
 };
 
+/*
+* Insert single row into 'table'
+*/
+bool DB::insert(string table, db_row row, db_row update)
+{
+    column_data * columns = getInfo(table);
+	if (columns == nullptr) {
+		cout << "table '" << table << "' does not exist" << endl;
+		return false;
+	}
+
+	if (!(row.size() > 0)) {
+		cout << "insert data is not provided" << endl;
+		return false;
+	}
+
+	string sql("INSERT INTO `" + table + "` (");
+
+	auto i = 0;
+	for (auto const & item : row) {
+		sql += "`" + item.first + "`";
+		if (i < (row.size() - 1)) { sql += ", "; }
+		i++;
+	}
+
+	sql += ") VALUES (" + repeat("?", row.size()) + ")";
+
+	if (!update.empty()) {
+        auto j = 0;
+        for (auto const & col : update) {
+            sql += "`" + col.first + "` = " + col.second;
+            if (j < (update.size() - 1)) { sql += ", "; }
+            j++;
+        }
+	}
+
+	unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(sql));
+	int pos = 1;
+	for (auto & item : row) {
+		int ctype = stoi((*columns)[item.first]["type"]);
+		if (ctype >= sql::DataType::CHAR && ctype <= sql::DataType::LONGVARBINARY) {
+			pstmt->setString(pos++, item.second);
+		} else if (ctype >= sql::DataType::BIT && ctype <= sql::DataType::BIGINT) {
+			pstmt->setInt(pos++, stoi(item.second));
+		} else if (ctype >= sql::DataType::REAL && ctype <= sql::DataType::NUMERIC) {
+			pstmt->setDouble(pos++, stod(item.second));
+		} else {
+			pstmt->setString(pos++, item.second);
+		}
+	}
+
+	pstmt->executeUpdate();
+	return true;
+};
+
 db_rows DB::fetchAll(string sql)
 {
 	unique_ptr<sql::Statement> stmt(con->createStatement());
