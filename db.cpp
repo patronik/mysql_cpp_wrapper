@@ -7,15 +7,14 @@ DB::DB (const char * host, const char * user, const char * pass)
 };
 
 /**
+* Update 'table' with data passed in 'row' according to optional filtering conditions passed in 'where'
 *
-*Where syntax:
-*
-* if where condition has 1 part - this is joiner between conditions
-*
-* if where condition has 2 parts - first part is left side of expression,
+* 'where' is a set of conditions that should be applied to the query.
+* Where explained:
+* If where condition has 1 part - this is joiner between conditions
+* If where condition has 2 parts - first part is left side of expression,
 *    second part is an operator and final value without placeholders
-*
-* if where condition has 3 or more parts - first part is left side of expression,
+* If where condition has 3 or more parts - first part is left side of expression,
 * second part is an operator with placeholders, third and rest are values for placeholders
 *
 **/
@@ -53,34 +52,31 @@ bool DB::update(string table, db_row row, db_where where)
 			}
 
 			if (where[i].size() == 2 && where[i][1].find("?") != string::npos) {
-				cout << "this condition should not contain placeholders" << endl;
+				cout << "placeholders are not allowed" << endl;
 				filter = "";
 				break;
 			}
 
+			// join conditions
 			if (i > 0) {
-                // join conditions
                 if (where[i].size() == 1) {
                     transform(where[i][0].begin(), where[i][0].end(),
                               where[i][0].begin(), ::toupper);
                    if (where[i][0] != "OR" && where[i][0] != "AND") {
-                        cout << "cannot join conditions with '"
-                        << where[i][0] << "'" << endl;
+                        cout << "unsupported operator '" << where[i][0] << "'" << endl;
                         filter = "";
                         break;
                    }
-                   // condition is a joiner
                    filter += " " + where[i][0] + " ";
                    continue;
                 } else {
                     if (where[i-1].size() != 1) {
-                        // default joiner
                         filter += " AND ";
                     }
                 }
 			}
 
-			// left side of expr
+			// left side of expression
 			if (columns->find(where[i][0]) != columns->end()) {
 				filter += "`" + where[i][0] + "`";
 			} else {
@@ -113,55 +109,39 @@ bool DB::update(string table, db_row row, db_where where)
 		for (auto i = 0; i < where.size(); i++) {
             // skip conditions without values for placeholders
             if (where[i].size() < 3) { continue; }
-
 			if (columns->find(where[i][0]) != columns->end()) {
-
 				int wtype = stoi((*columns)[where[i][0]]["type"]);
 				if (wtype >= sql::DataType::CHAR && wtype <= sql::DataType::LONGVARBINARY) {
 					pstmt->setString(pos++, where[i][2]);
-
-					// if this condition has more that 1 placeholders
 					if (where[i].size() > 3) {
 						for (auto n = 3; n < where[i].size(); n++) {
 							pstmt->setString(pos++, where[i][n]);
 						}
 					}
-
 				} else if (wtype >= sql::DataType::BIT && wtype <= sql::DataType::BIGINT) {
 					pstmt->setInt(pos++, stoi(where[i][2]));
-
-					// if this condition has more that 1 placeholders
 					if (where[i].size() > 3) {
 						for (auto n = 3; n < where[i].size(); n++) {
 							pstmt->setInt(pos++, stoi(where[i][n]));
 						}
 					}
-
 				} else if (wtype >= sql::DataType::REAL && wtype <= sql::DataType::NUMERIC) {
 					pstmt->setDouble(pos++, stod(where[i][2]));
-
-					// if this condition has more that 1 placeholders
 					if (where[i].size() > 3) {
 						for (auto n = 3; n < where[i].size(); n++) {
 							pstmt->setDouble(pos++, stod(where[i][n]));
 						}
 					}
-
 				} else {
 					pstmt->setString(pos++, where[i][2]);
-
-					// if this condition has more that 1 placeholders
 					if (where[i].size() > 3) {
 						for (auto n = 3; n < where[i].size(); n++) {
 							pstmt->setString(pos++, where[i][n]);
 						}
 					}
-
 				}
 			} else {
 				pstmt->setString(pos++, where[i][2]);
-
-				// if this condition has more that 1 placeholders
 				if (where[i].size() > 3) {
 					for (auto n = 3; n < where[i].size(); n++) {
 						pstmt->setString(pos++, where[i][n]);
