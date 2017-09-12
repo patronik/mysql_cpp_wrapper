@@ -156,7 +156,22 @@ bool DB::update(string table, db_row row, db_where where)
 };
 
 /*
-* Insert single row into 'table'
+* Insert single row and update all columns if key exists
+*/
+bool DB::insert(string table, db_row row, bool update)
+{
+    db_row data;
+    if (update) {
+        for (auto const & item : row) {
+            data[item.first] = "VALUES(`" + item.first + "`)";
+        }
+        return insert(table, row, data);
+    }
+    return insert(table, row, data);
+};
+
+/*
+* Insert single row and update specified columns if key exists
 */
 bool DB::insert(string table, db_row row, db_row update)
 {
@@ -183,6 +198,7 @@ bool DB::insert(string table, db_row row, db_row update)
 	sql += ") VALUES (" + repeat("?", row.size()) + ")";
 
 	if (!update.empty()) {
+        sql += " ON DUPLICATE KEY UPDATE ";
         auto j = 0;
         for (auto const & col : update) {
             sql += "`" + col.first + "` = " + col.second;

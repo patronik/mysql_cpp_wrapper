@@ -52,19 +52,19 @@ public:
 
 	bool query(string sql);
 
-	// update zero or more rows
+	// Update zero or more rows
 	bool update(string table, db_row row, db_where where = db_where());
 
-	// delete zero or more rows
-	bool remove(string table);
-
-	// delete zero or more rows
+	// Delete zero or more rows
 	bool remove(string table, db_where where);
 
-	// insert single row and update if key exists
+	// Insert single row and update specified columns if key exists
 	bool insert(string table, db_row row, db_row update = db_row());
 
-	// insert multiple rows and update if key exists
+	// Insert single row and update all columns if key exists
+	bool insert(string table, db_row row, bool update);
+
+	// Insert multiple rows and update if key exists
 	bool insert(string table, db_rows rows, db_row update = db_row());
 
 	// helper methods
