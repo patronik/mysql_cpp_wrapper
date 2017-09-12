@@ -156,24 +156,31 @@ bool DB::update(string table, db_row row, db_where where)
 };
 
 /*
+* Insert single row
+*/
+bool DB::insertRow(string table, db_row row)
+{
+    return insertRow(table, row, db_row());
+};
+
+/*
 * Insert single row and update all columns if key exists
 */
-bool DB::insert(string table, db_row row, bool update)
+bool DB::insertRow(string table, db_row row, bool update)
 {
     db_row data;
     if (update) {
         for (auto const & item : row) {
             data[item.first] = "VALUES(`" + item.first + "`)";
         }
-        return insert(table, row, data);
     }
-    return insert(table, row, data);
+    return insertRow(table, row, data);
 };
 
 /*
 * Insert single row and update specified columns if key exists
 */
-bool DB::insert(string table, db_row row, db_row update)
+bool DB::insertRow(string table, db_row row, db_row update)
 {
     column_data * columns = getInfo(table);
 	if (columns == nullptr) {

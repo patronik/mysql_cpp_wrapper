@@ -55,17 +55,20 @@ public:
 	// Update zero or more rows
 	bool update(string table, db_row row, db_where where = db_where());
 
-	// Delete zero or more rows
+	// Delete zero or one row
 	bool remove(string table, db_where where);
 
-	// Insert single row and update specified columns if key exists
-	bool insert(string table, db_row row, db_row update = db_row());
+	// Insert single row
+	bool insertRow(string table, db_row row);
 
 	// Insert single row and update all columns if key exists
-	bool insert(string table, db_row row, bool update);
+	bool insertRow(string table, db_row row, bool update);
+
+	// Insert single row and update specified columns if key exists
+	bool insertRow(string table, db_row row, db_row update);
 
 	// Insert multiple rows and update if key exists
-	bool insert(string table, db_rows rows, db_row update = db_row());
+	bool insertAll(string table, db_rows rows, db_row update = db_row());
 
 	// helper methods
 	string repeat(string c, int n, string glue = ",");
