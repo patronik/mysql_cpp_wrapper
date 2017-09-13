@@ -233,6 +233,93 @@ bool DB::insertRow(string table, db_row row, db_row update)
 	return true;
 };
 
+
+/*
+* Insert multiple rows
+*/
+bool DB::insertAll(string table, db_rows rows)
+{
+    return insertAll(table, rows, db_row());
+};
+
+/*
+* Insert multiple rows and update all columns if key exists
+*/
+bool DB::insertAll(string table, db_rows rows, bool update)
+{
+    db_row data;
+    if (update) {
+        for (auto const & item : rows.front()) {
+            data[item.first] = "VALUES(`" + item.first + "`)";
+        }
+    }
+    return insertAll(table, rows, data);
+};
+
+/*
+* Insert multiple rows and update if key exists
+*/
+bool DB::insertAll(string table, db_rows rows, db_row update)
+{
+    column_data * columns = getInfo(table);
+	if (columns == nullptr) {
+		cout << "table '" << table << "' does not exist" << endl;
+		return false;
+	}
+
+	if (!(rows.size() > 0)) {
+		cout << "insert data is not provided" << endl;
+		return false;
+	}
+
+	string sql("INSERT INTO `" + table + "` (");
+
+	auto i = 0;
+	for (auto const & item : rows.front()) {
+		sql += "`" + item.first + "`";
+		if (i < (rows.front().size() - 1)) { sql += ", "; }
+		i++;
+	}
+
+	sql += ") VALUES ";
+
+	for (auto i = 0; i < rows.size(); i++) {
+        sql += "(" + repeat("?", rows.front().size()) + ")";
+        if (i < (rows.size() - 1)) { sql += ", "; }
+	}
+
+	if (!update.empty()) {
+        sql += " ON DUPLICATE KEY UPDATE ";
+        auto j = 0;
+        for (auto const & col : update) {
+            sql += "`" + col.first + "` = " + col.second;
+            if (j < (update.size() - 1)) { sql += ", "; }
+            j++;
+        }
+	}
+
+	unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(sql));
+	int pos = 1;
+	for (auto & row : rows) {
+        for (auto & item : row) {
+            int ctype = stoi((*columns)[item.first]["type"]);
+            if (ctype >= sql::DataType::CHAR && ctype <= sql::DataType::LONGVARBINARY) {
+                pstmt->setString(pos++, item.second);
+            } else if (ctype >= sql::DataType::BIT && ctype <= sql::DataType::BIGINT) {
+                pstmt->setInt(pos++, stoi(item.second));
+            } else if (ctype >= sql::DataType::REAL && ctype <= sql::DataType::NUMERIC) {
+                pstmt->setDouble(pos++, stod(item.second));
+            } else {
+                pstmt->setString(pos++, item.second);
+            }
+        }
+	}
+
+	pstmt->executeUpdate();
+	return true;
+
+};
+
 db_rows DB::fetchAll(string sql)
 {
 	unique_ptr<sql::Statement> stmt(con->createStatement());

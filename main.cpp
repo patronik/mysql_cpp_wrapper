@@ -25,7 +25,7 @@ int main(int argc, char * argv[]) {
 		db.query("INSERT INTO `test` (id) VALUES (6)");
 		db.query("INSERT INTO `test` (id) VALUES (7)");
 
-		db.insertRow("test", {{"id", "15"}}, true);
+		db.insertRow("test", {{"id", "15"}, {"name", "jacob"}}, true);
 		db.insertRow("test", {{"id", "25"}}, {{"id", "15"}});
 		db.insertRow("test", {{"id", "65"}, {"name", "john"}, {"id", "15"}}, {{"name", "VALUES(name)"}});
 		db.insertRow("test", {{"id", "35"}});
@@ -44,6 +44,44 @@ int main(int argc, char * argv[]) {
 		db.update("test", {{ "id", "125" }}, {{ "id", "= ?", "15" }, {"OR"}, { "id", "= ?", "16"}});
 		db.update("test", {{ "id", "125" }}, {{ "id", " > 156"}, {"AND"}, { "id", "= ?", "16"}});
 		db.update("test", {{ "id", "325" }}, {{ "id", "IN(?, ?, ?)", "175", "185", "195"}, {"OR"}, {"name", " = ?", "ivan"}, {"OR"}, {"id", "= ?", "66"}, {"id", "= ?", "166"}, {"id", "= ?", "66"}, {"id", "= ?", "76"}});
+
+
+
+		db.insertAll("test",
+           {
+            {{"id", "115"}, {"name", "jacob1"}},
+            {{"id", "215"}, {"name", "jacob2"}},
+            {{"id", "315"}, {"name", "jacob3"}},
+            {{"id", "415"}, {"name", "jacob4"}},
+            {{"id", "515"}, {"name", "jacob5"}},
+            {{"id", "615"}, {"name", "jacob6"}},
+            {{"id", "715"}, {"name", "jacob7"}}
+           }
+        );
+
+		db.insertAll("test",
+           {
+            {{"id", "115"}, {"name", "jacob1"}},
+            {{"id", "215"}, {"name", "jacob2"}},
+            {{"id", "315"}, {"name", "jacob3"}},
+            {{"id", "415"}, {"name", "jacob4"}},
+            {{"id", "515"}, {"name", "jacob5"}},
+            {{"id", "615"}, {"name", "jacob6"}},
+            {{"id", "715"}, {"name", "jacob7"}}
+           },
+        {{"name", "VALUES(name)"}});
+
+        db.insertAll("test",
+           {
+            {{"id", "115"}, {"name", "jacob1"}},
+            {{"id", "215"}, {"name", "jacob2"}},
+            {{"id", "315"}, {"name", "jacob3"}},
+            {{"id", "415"}, {"name", "jacob4"}},
+            {{"id", "515"}, {"name", "jacob5"}},
+            {{"id", "615"}, {"name", "jacob6"}},
+            {{"id", "715"}, {"name", "jacob7"}}
+           },
+        true);
 
 		db.setDatabase("mysql");
 		db_rows rows = db.fetchAll("SELECT `argument` FROM `general_log`");

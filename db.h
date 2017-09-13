@@ -67,8 +67,14 @@ public:
 	// Insert single row and update specified columns if key exists
 	bool insertRow(string table, db_row row, db_row update);
 
-	// Insert multiple rows and update if key exists
-	bool insertAll(string table, db_rows rows, db_row update = db_row());
+	// Insert multiple rows
+	bool insertAll(string table, db_rows rows);
+
+	// Insert multiple rows and update all columns if key exists
+	bool insertAll(string table, db_rows rows, bool update);
+
+	// Insert multiple rows and update specified columns if key exists
+	bool insertAll(string table, db_rows rows, db_row update);
 
 	// helper methods
 	string repeat(string c, int n, string glue = ",");
