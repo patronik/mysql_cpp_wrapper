@@ -1,9 +1,9 @@
 #include "db.h"
 
-DB::DB (const char * host, const char * user, const char * pass)
+DB::DB (string host, string user, string pass)
 {
 	sql::Driver * driver = get_driver_instance();
-	con.reset(driver->connect("tcp://" + string(host), user, pass));
+	con.reset(driver->connect("tcp://" + host, user, pass));
 };
 
 /**

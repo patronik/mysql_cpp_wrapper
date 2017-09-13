@@ -43,7 +43,7 @@ class DB {
 
 public:
 
-	DB(const char *, const char *, const char *);
+	DB(string host, string user, string pass);
 
 	/*
 	* Select database to work with

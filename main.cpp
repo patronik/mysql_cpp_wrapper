@@ -1,8 +1,36 @@
+#include "main.h"
 #include "db.h"
 
+// Global state
+boost::property_tree::ptree config;
+
 int main(int argc, char * argv[]) {
+
 	try {
-		DB db("127.0.0.1:3306", "root", "123");
+
+        ifstream file("config.ini");
+        if (!file) {
+            cout << "config.ini does not exists" << endl;
+            return -1;
+        }
+
+        boost::property_tree::ini_parser::read_ini("config.ini", config);
+
+        string host = config.get<string>("mysql.host");
+        string user = config.get<string>("mysql.username");
+        string pass = config.get<string>("mysql.password");
+        string port = config.get<string>("mysql.port");
+
+        if (host.empty() || user.empty() || pass.empty()) {
+            cout << "please provide db access details" << endl;
+            return -1;
+        }
+
+        if (!port.empty()) {
+            host += ":" + port;
+        }
+
+		DB db(host, user, pass);
 
 		db.setDatabase("mysql");
 		db.query("TRUNCATE TABLE `general_log`");
