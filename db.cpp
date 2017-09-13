@@ -257,7 +257,7 @@ bool DB::insertAll(string table, db_rows rows, bool update)
 };
 
 /*
-* Insert multiple rows and update if key exists
+* Insert multiple rows and update specified columns if key exists
 */
 bool DB::insertAll(string table, db_rows rows, db_row update)
 {
@@ -320,6 +320,9 @@ bool DB::insertAll(string table, db_rows rows, db_row update)
 
 };
 
+/*
+* Fetch all records returned by select query
+*/
 db_rows DB::fetchAll(string sql)
 {
 	unique_ptr<sql::Statement> stmt(con->createStatement());
@@ -337,6 +340,9 @@ db_rows DB::fetchAll(string sql)
 	return rows;
 };
 
+/*
+* Fetch single record returned by select query
+*/
 db_row DB::fetchRow(string sql)
 {
 	unique_ptr<sql::Statement> stmt(con->createStatement());
@@ -352,6 +358,9 @@ db_row DB::fetchRow(string sql)
 	return row;
 };
 
+/*
+* Fetch single column value returned by select query
+*/
 db_val DB::fetchOne(string sql)
 {
 	db_val val("");
@@ -363,12 +372,18 @@ db_val DB::fetchOne(string sql)
 	return val;
 };
 
+/*
+* Execute arbitrary query
+*/
 bool DB::query(string sql)
 {
 	unique_ptr<sql::Statement> stmt(con->createStatement());
 	return stmt->execute(sql);
 };
 
+/*
+* Helper method that generates placeholders for queries
+*/
 string DB::repeat(string c, int n, string glue)
 {
     string res;
@@ -379,6 +394,9 @@ string DB::repeat(string c, int n, string glue)
     return res;
 };
 
+/*
+* Helper method that retrieves information about table columns
+*/
 column_data * DB::getInfo(string table)
 {
 	if (tableData.find(table) == tableData.end()) {
