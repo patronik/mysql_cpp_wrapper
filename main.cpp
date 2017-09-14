@@ -4,18 +4,9 @@
 // Global state
 boost::property_tree::ptree config;
 
-int main(int argc, char * argv[]) {
-
-	try {
-
-        ifstream file("config.ini");
-        if (!file) {
-            cout << "config.ini does not exists" << endl;
-            return -1;
-        }
-
-        boost::property_tree::ini_parser::read_ini("config.ini", config);
-
+int test()
+{
+    try {
         string host = config.get<string>("mysql.host");
         string user = config.get<string>("mysql.username");
         string pass = config.get<string>("mysql.password");
@@ -120,6 +111,19 @@ int main(int argc, char * argv[]) {
 			cout << std::endl;
 		};
 
+        db.setDatabase("sandbox");
+		db.remove("test", {{"name", " = ?", "jacob1"}, {"OR"}, {"name", "= ?", "jacob5"}});
+		db.remove("test", {{"name", " LIKE ?", "%jac%"}, {"id", "= ?", "115"}});
+
+        db.setDatabase("mysql");
+		rows = db.fetchAll("SELECT `argument` FROM `general_log`");
+		for (auto const & row : rows) {
+			for (auto const & item : row) {
+				cout << item.first << " = " << item.second << " ";
+			}
+			cout << std::endl;
+		};
+
 		db.query("SET global general_log = 0");
 
 	}
@@ -131,5 +135,20 @@ int main(int argc, char * argv[]) {
 		cout << " (MySQL error code: " << e.getErrorCode();
 		cout << ", SQLState: " << e.getSQLState() << " )" << endl;
 	}
+
+	return 0;
+};
+
+
+int main(int argc, char * argv[]) {
+
+	ifstream file("config.ini");
+    if (!file) {
+        cout << "config.ini does not exists" << endl;
+        return -1;
+    }
+
+    boost::property_tree::ini_parser::read_ini("config.ini", config);
+
 	return 0;
 }
