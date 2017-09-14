@@ -78,8 +78,10 @@ public:
 	*/
 	bool update(string table, db_row row, db_where where = db_where());
 
-	// Delete zero or one row
-	bool remove(string table, db_where where);
+	/*
+    * Delete zero or one row
+    */
+	bool remove(string table, db_where where = db_where());
 
 	/*
     * Insert single row

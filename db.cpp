@@ -33,7 +33,7 @@ bool DB::update(string table, db_row row, db_where where)
 
 	string sql("UPDATE `" + table + "` SET ");
 
-	auto i = 0;
+	unsigned int i = 0;
 	for (auto const & item : row) {
 		sql += "`" + item.first + "` = ?";
 		if (i < (row.size() - 1)) { sql += ", "; }
@@ -43,7 +43,7 @@ bool DB::update(string table, db_row row, db_where where)
 	string filter;
 	if (where.size() > 0) {
 		filter = " WHERE ";
- 		for (auto i = 0; i < where.size(); i++) {
+ 		for (unsigned int i = 0; i < where.size(); i++) {
 
 			if (where[i].empty()) {
 				cout << "condition cannot be empty" << endl;
@@ -106,7 +106,7 @@ bool DB::update(string table, db_row row, db_where where)
 	}
 
 	if (where.size() > 0 && !filter.empty()) {
-		for (auto i = 0; i < where.size(); i++) {
+		for (unsigned int i = 0; i < where.size(); i++) {
             // skip conditions without values for placeholders
             if (where[i].size() < 3) { continue; }
 			if (columns->find(where[i][0]) != columns->end()) {
@@ -114,28 +114,28 @@ bool DB::update(string table, db_row row, db_where where)
 				if (wtype >= sql::DataType::CHAR && wtype <= sql::DataType::LONGVARBINARY) {
 					pstmt->setString(pos++, where[i][2]);
 					if (where[i].size() > 3) {
-						for (auto n = 3; n < where[i].size(); n++) {
+						for (unsigned int n = 3; n < where[i].size(); n++) {
 							pstmt->setString(pos++, where[i][n]);
 						}
 					}
 				} else if (wtype >= sql::DataType::BIT && wtype <= sql::DataType::BIGINT) {
 					pstmt->setInt(pos++, stoi(where[i][2]));
 					if (where[i].size() > 3) {
-						for (auto n = 3; n < where[i].size(); n++) {
+						for (unsigned int n = 3; n < where[i].size(); n++) {
 							pstmt->setInt(pos++, stoi(where[i][n]));
 						}
 					}
 				} else if (wtype >= sql::DataType::REAL && wtype <= sql::DataType::NUMERIC) {
 					pstmt->setDouble(pos++, stod(where[i][2]));
 					if (where[i].size() > 3) {
-						for (auto n = 3; n < where[i].size(); n++) {
+						for (unsigned int n = 3; n < where[i].size(); n++) {
 							pstmt->setDouble(pos++, stod(where[i][n]));
 						}
 					}
 				} else {
 					pstmt->setString(pos++, where[i][2]);
 					if (where[i].size() > 3) {
-						for (auto n = 3; n < where[i].size(); n++) {
+						for (unsigned int n = 3; n < where[i].size(); n++) {
 							pstmt->setString(pos++, where[i][n]);
 						}
 					}
@@ -143,7 +143,123 @@ bool DB::update(string table, db_row row, db_where where)
 			} else {
 				pstmt->setString(pos++, where[i][2]);
 				if (where[i].size() > 3) {
-					for (auto n = 3; n < where[i].size(); n++) {
+					for (unsigned int n = 3; n < where[i].size(); n++) {
+						pstmt->setString(pos++, where[i][n]);
+					}
+				}
+			}
+		}
+	}
+
+	pstmt->executeUpdate();
+	return true;
+};
+
+/*
+* Delete zero or one row
+*/
+bool DB::remove(string table, db_where where)
+{
+    column_data * columns = getInfo(table);
+	if (columns == nullptr) {
+		cout << "table '" << table << "' does not exist" << endl;
+		return false;
+	}
+
+	string sql("DELETE FROM `" + table + "`");
+
+	string filter;
+	if (where.size() > 0) {
+		filter = " WHERE ";
+ 		for (unsigned int i = 0; i < where.size(); i++) {
+
+			if (where[i].empty()) {
+				cout << "condition cannot be empty" << endl;
+				filter = "";
+				break;
+			}
+
+			if (where[i].size() == 2 && where[i][1].find("?") != string::npos) {
+				cout << "placeholders are not allowed" << endl;
+				filter = "";
+				break;
+			}
+
+			// join conditions
+			if (i > 0) {
+                if (where[i].size() == 1) {
+                    transform(where[i][0].begin(), where[i][0].end(),
+                              where[i][0].begin(), ::toupper);
+                   if (where[i][0] != "OR" && where[i][0] != "AND") {
+                        cout << "unsupported operator '" << where[i][0] << "'" << endl;
+                        filter = "";
+                        break;
+                   }
+                   filter += " " + where[i][0] + " ";
+                   continue;
+                } else {
+                    if (where[i-1].size() != 1) {
+                        filter += " AND ";
+                    }
+                }
+			}
+
+			// left side of expression
+			if (columns->find(where[i][0]) != columns->end()) {
+				filter += "`" + where[i][0] + "`";
+			} else {
+				filter += where[i][0];
+			}
+
+			// operator with placeholder(s) or final value
+			filter += " " + where[i][1] + " ";
+
+		}
+		sql += filter;
+	}
+
+	unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(sql));
+
+	int pos = 1;
+	if (where.size() > 0 && !filter.empty()) {
+		for (unsigned int i = 0; i < where.size(); i++) {
+            // skip conditions without values for placeholders
+            if (where[i].size() < 3) { continue; }
+			if (columns->find(where[i][0]) != columns->end()) {
+				int wtype = stoi((*columns)[where[i][0]]["type"]);
+				if (wtype >= sql::DataType::CHAR && wtype <= sql::DataType::LONGVARBINARY) {
+					pstmt->setString(pos++, where[i][2]);
+					if (where[i].size() > 3) {
+						for (unsigned int n = 3; n < where[i].size(); n++) {
+							pstmt->setString(pos++, where[i][n]);
+						}
+					}
+				} else if (wtype >= sql::DataType::BIT && wtype <= sql::DataType::BIGINT) {
+					pstmt->setInt(pos++, stoi(where[i][2]));
+					if (where[i].size() > 3) {
+						for (unsigned int n = 3; n < where[i].size(); n++) {
+							pstmt->setInt(pos++, stoi(where[i][n]));
+						}
+					}
+				} else if (wtype >= sql::DataType::REAL && wtype <= sql::DataType::NUMERIC) {
+					pstmt->setDouble(pos++, stod(where[i][2]));
+					if (where[i].size() > 3) {
+						for (unsigned int n = 3; n < where[i].size(); n++) {
+							pstmt->setDouble(pos++, stod(where[i][n]));
+						}
+					}
+				} else {
+					pstmt->setString(pos++, where[i][2]);
+					if (where[i].size() > 3) {
+						for (unsigned int n = 3; n < where[i].size(); n++) {
+							pstmt->setString(pos++, where[i][n]);
+						}
+					}
+				}
+			} else {
+				pstmt->setString(pos++, where[i][2]);
+				if (where[i].size() > 3) {
+					for (unsigned int n = 3; n < where[i].size(); n++) {
 						pstmt->setString(pos++, where[i][n]);
 					}
 				}
@@ -195,7 +311,7 @@ bool DB::insertRow(string table, db_row row, db_row update)
 
 	string sql("INSERT INTO `" + table + "` (");
 
-	auto i = 0;
+	unsigned int i = 0;
 	for (auto const & item : row) {
 		sql += "`" + item.first + "`";
 		if (i < (row.size() - 1)) { sql += ", "; }
@@ -206,7 +322,7 @@ bool DB::insertRow(string table, db_row row, db_row update)
 
 	if (!update.empty()) {
         sql += " ON DUPLICATE KEY UPDATE ";
-        auto j = 0;
+        unsigned int j = 0;
         for (auto const & col : update) {
             sql += "`" + col.first + "` = " + col.second;
             if (j < (update.size() - 1)) { sql += ", "; }
@@ -274,7 +390,7 @@ bool DB::insertAll(string table, db_rows rows, db_row update)
 
 	string sql("INSERT INTO `" + table + "` (");
 
-	auto i = 0;
+	unsigned int i = 0;
 	for (auto const & item : rows.front()) {
 		sql += "`" + item.first + "`";
 		if (i < (rows.front().size() - 1)) { sql += ", "; }
@@ -283,14 +399,14 @@ bool DB::insertAll(string table, db_rows rows, db_row update)
 
 	sql += ") VALUES ";
 
-	for (auto i = 0; i < rows.size(); i++) {
+	for (unsigned int i = 0; i < rows.size(); i++) {
         sql += "(" + repeat("?", rows.front().size()) + ")";
         if (i < (rows.size() - 1)) { sql += ", "; }
 	}
 
 	if (!update.empty()) {
         sql += " ON DUPLICATE KEY UPDATE ";
-        auto j = 0;
+        unsigned int j = 0;
         for (auto const & col : update) {
             sql += "`" + col.first + "` = " + col.second;
             if (j < (update.size() - 1)) { sql += ", "; }
