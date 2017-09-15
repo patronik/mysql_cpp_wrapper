@@ -139,6 +139,50 @@ int test()
 	return 0;
 };
 
+void setParam(string & sql, char p);
+void setParam(string & sql, int p);
+void setParam(string & sql, const char * p);
+void setParam(string & sql, double p);
+void setParam(string & sql, float p);
+void setParam(string & sql, string p);
+
+template<typename T>
+bool query(string sql, T last) {
+    setParam(sql, last);
+    cout << sql << endl;
+    return true;
+}
+
+void setParam(string & sql, char p) {
+    cout << p << endl;
+}
+
+void setParam(string & sql, int p) {
+    cout << p << endl;
+}
+
+void setParam(string & sql, const char * p) {
+    cout << p << endl;
+}
+
+void setParam(string & sql, double p) {
+    cout << p << endl;
+}
+
+void setParam(string & sql, float p) {
+    cout << p << endl;
+}
+
+void setParam(string & sql, string p) {
+    cout << p << endl;
+}
+
+template<typename SQL, typename T, typename... Args>
+bool query(SQL sql, T p, Args... args) {
+    setParam(sql, p);
+    query(sql, args...);
+    return true;
+}
 
 int main(int argc, char * argv[]) {
 
@@ -149,6 +193,8 @@ int main(int argc, char * argv[]) {
     }
 
     boost::property_tree::ini_parser::read_ini("config.ini", config);
+
+    query(string("SELECT ? FROM ?"), 2, 2.2, -5, 'c' , "abcd", string("some text..."));
 
 	return 0;
 }
