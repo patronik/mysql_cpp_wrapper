@@ -488,6 +488,30 @@ db_val DB::fetchOne(string sql)
 	return val;
 };
 
+void DB::setParam(pair<unique_ptr<sql::PreparedStatement>, int> & pstmt, char p) {
+    pstmt.first->setString(pstmt.second++, string(1, p));
+}
+
+void DB::setParam(pair<unique_ptr<sql::PreparedStatement>, int> & pstmt, int p) {
+    pstmt.first->setInt(pstmt.second++, p);
+}
+
+void DB::setParam(pair<unique_ptr<sql::PreparedStatement>, int> & pstmt, const char * p) {
+    pstmt.first->setString(pstmt.second++, p);
+}
+
+void DB::setParam(pair<unique_ptr<sql::PreparedStatement>, int> & pstmt, double p) {
+    pstmt.first->setDouble(pstmt.second++, p);
+}
+
+void DB::setParam(pair<unique_ptr<sql::PreparedStatement>, int> & pstmt, float p) {
+    pstmt.first->setDouble(pstmt.second++, p);
+}
+
+void DB::setParam(pair<unique_ptr<sql::PreparedStatement>, int> & pstmt, string p) {
+    pstmt.first->setString(pstmt.second++, p);
+}
+
 /*
 * Execute arbitrary query
 */

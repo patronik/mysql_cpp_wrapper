@@ -116,12 +116,22 @@ int test()
 		db.remove("test", {{"name", " LIKE ?", "%jac%"}, {"id", "= ?", "115"}});
 
         db.setDatabase("mysql");
-		rows = db.fetchAll("SELECT `argument` FROM `general_log`");
+
+        db_val one = db.fetchOne(string("SELECT `argument` FROM `general_log` WHERE `command_type` = ?"), string("Query"));
+
+        cout << "one = " << one << endl;
+
+        db_row row = db.fetchRow(string("SELECT * FROM `general_log` WHERE `command_type` = ?"), string("Query"));
+
+        cout << "row start" << endl;
+        for (auto const & item : row) {
+            cout << item.first << " = " << item.second << endl;
+        }
+        cout << "row end" << endl;
+
+		rows = db.fetchAll(string("SELECT `command_type`, `argument` FROM `general_log` WHERE ? = ? OR ? = ?"), 1, 1, "a", 'a');
 		for (auto const & row : rows) {
-			for (auto const & item : row) {
-				cout << item.first << " = " << item.second << " ";
-			}
-			cout << std::endl;
+			cout << "Command Type: " << row.at("command_type") << " " << row.at("argument") << endl;
 		};
 
 		db.query("SET global general_log = 0");
@@ -139,51 +149,6 @@ int test()
 	return 0;
 };
 
-void setParam(string & sql, char p);
-void setParam(string & sql, int p);
-void setParam(string & sql, const char * p);
-void setParam(string & sql, double p);
-void setParam(string & sql, float p);
-void setParam(string & sql, string p);
-
-template<typename T>
-bool query(string sql, T last) {
-    setParam(sql, last);
-    cout << sql << endl;
-    return true;
-}
-
-void setParam(string & sql, char p) {
-    cout << p << endl;
-}
-
-void setParam(string & sql, int p) {
-    cout << p << endl;
-}
-
-void setParam(string & sql, const char * p) {
-    cout << p << endl;
-}
-
-void setParam(string & sql, double p) {
-    cout << p << endl;
-}
-
-void setParam(string & sql, float p) {
-    cout << p << endl;
-}
-
-void setParam(string & sql, string p) {
-    cout << p << endl;
-}
-
-template<typename SQL, typename T, typename... Args>
-bool query(SQL sql, T p, Args... args) {
-    setParam(sql, p);
-    query(sql, args...);
-    return true;
-}
-
 int main(int argc, char * argv[]) {
 
 	ifstream file("config.ini");
@@ -194,7 +159,7 @@ int main(int argc, char * argv[]) {
 
     boost::property_tree::ini_parser::read_ini("config.ini", config);
 
-    query(string("SELECT ? FROM ?"), 2, 2.2, -5, 'c' , "abcd", string("some text..."));
+    test();
 
 	return 0;
 }
